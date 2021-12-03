@@ -30,6 +30,7 @@ int proc_info(const char *procces)
 int main(void)
 {
     pid_t proc_id = fork();
+    int state = 0;
     if (proc_id == -1)
     {
         perror("Error in fork");
@@ -41,6 +42,7 @@ int main(void)
     }
     else
     {
+        waitpid(proc_id, &state, WUNTRACED);
         proc_info("Parent");
     }
 
