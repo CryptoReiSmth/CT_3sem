@@ -1,44 +1,50 @@
-#include <sys/types.h>
 #include <stdio.h>
-#include <wait.h>
-#include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
+#include <sys/wait.h>
 
-void my_handler()
+int proc_info(const char *procces)
 {
-    int status;
-    pid_t pid = waitpid(-1, &status, 0);
-        if (pid < 0)
-        {
-            perror ("Error in waitpid");
-        }
-        else if ((status & 0xff) == 0)
-        {
-            printf("Process %d exited with status %d\n", pid, status >>8);
-        }
-        else if ((status & 0xff00) == 0)
-        {
-            printf("Process %d killed by signal %d %s\n", pid, status &0x7f, (status & 0x80) ?
-			       "with core file" : "without core file");
-        }
+    printf ("%s: PID %d, Parent PID %d, SID %d, ", procces, getpid(), getppid(), getsid(0));
+    struct passwd *pswd = getpwuid(getuid());
+    if (pswd == NULL)
+    {
+        perror("Error in reading /etc/passwd");
+        return 1;
+    }
+    printf("UID %d, User Name -- %s, ", getuid(), pswd->pw_name);
+    struct group *grp = getgrgid(pswd->pw_gid);
+    if (grp == NULL)
+    {
+        perror("Error in reading /etc/group");
+        return 2;
+    }
+    printf("GID %d, Group Name -- %s\n", getgid(), grp->gr_name);
+    return 0;
 }
 
 int main(void)
 {
-    pid_t pid = fork();
-    signal (SIGCHLD, my_handler);
-    if (pid < 0)
+    pid_t proc_id = fork();
+    int state = 0;
+    if (proc_id == -1)
     {
-        printf("Error in fork\n");
-        return 1;
-    }
-    if (pid == 0)
+        perror("Error in fork");
+        return -1;
+    }    
+    if (proc_id == 0)
     {
-        printf("I'm working");
-        return 2;
+        proc_info("Child ");
     }
-    printf("First we see this\n");
-    //sleep(5);
+    else
+    {
+        waitpid(proc_id, &state, WUNTRACED);
+        proc_info("Parent");
+    }
+
     return 0;
 }
