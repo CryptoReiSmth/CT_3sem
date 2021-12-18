@@ -69,18 +69,21 @@ int main(int argc, char *argv[])
         perror("Source and destination files should be different");
         return 2;
     }
-    int sour_fd = open(argv[1], O_RDONLY | S_IRUSR | S_IRGRP);
+    int sour_fd = open(argv[1], O_RDONLY);
     if (sour_fd == -1)
     {
         perror("Erorr in opening source file");
         return 3;
     }
-    int dest_fd = open(argv[2], O_WRONLY | O_CREAT | O_TRUNC, 0664);
+    int dest_fd = open(argv[2], O_WRONLY | O_CREAT | O_TRUNC);
     if (dest_fd == -1)
     {
         perror("Erorr in opening destination file");
         return 4;
     }
+
+    int result = copy_all(sour_fd, dest_fd);
+
 
     if (close(sour_fd) == -1)
     {
@@ -92,5 +95,5 @@ int main(int argc, char *argv[])
         perror("Error in closing destination file");
         return 6;
     }
-    return 0;
+    return result;
 }
