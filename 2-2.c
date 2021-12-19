@@ -7,28 +7,31 @@
 
 int main(int argc, char *argv[])
 {
+    // Write text to file
+    int res = 0;
     if (argc != 3)
     {
-		fprintf(stderr, "Usage: %s path text\n", argv[0]);
-		return 1;
-	}
+        fprintf(stderr, "Usage: %s path text\n", argv[0]);
+        res =  1;
+    }
 
-    int fd = open(argv[1], O_WRONLY | O_CREAT | O_TRUNC);
+    int fd = open(argv[1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd == -1)
     {
         perror("Erorr in opening file");
-        return 2;
+        res =  2;
     }
 
     if (dprintf(fd, "%s", argv[2]) != (int)strlen(argv[2]))
     {
         perror("Error in dprintf");
-        return 3;
+        res =  3;
     }
 
-        if(close(fd) == -1)
+    if(close(fd) == -1)
     {
         perror("Error in closing file descriptor");
-        return 4;
+        res = 4;
     }
+    return res;
 }

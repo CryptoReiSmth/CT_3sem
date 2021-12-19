@@ -12,47 +12,17 @@ int main(void)
 {
 
     // credentials - process identifiers
-    printf ("Process ID: %d, Parent Process ID: %d, Process Group ID: %d, Real GID: %d, Session ID: %d\n", getpid(), getppid(), getpgrp(), getegid(), getsid(0));
+    printf ("Process ID: %d, Parent Process ID: %d, Process Group ID: %d, Session ID: %d\n", getpid(), getppid(), getpgrp(), getsid(0));
 
-    struct passwd *pswd = getpwuid(getuid());
-    errno = 0;
-    if (pswd == NULL)
-    {
-        if (errno != 0)
-        {
-            perror("Error in reading /etc/passwd");
-            return 1;
-        }
-        else
-        {
-            printf("User ID: %d, User Name: ???\n", getuid());
-        }
-    }
-    else
-    {
-        printf("User ID: %d, User Name: %s\n", getuid(), pswd->pw_name);
-    }
+    uid_t uid = getuid();
+    struct passwd *pswd = getpwuid(uid);
+    printf("User ID: %d, User Name: %s\n", uid, pswd ? pswd->pw_name : "?");
 
-    struct group *grp = getgrgid(pswd->pw_gid);
-    errno = 0;
-    if (grp == NULL)
-    {
-        if (errno != 0)
-        {
-            perror("Error in reading /etc/group");
-            return 2;
-        }
-        else
-        {
-            printf("Group ID: %d, Group Name: ???\n", getgid());
-        }
-    }
-    else
-    {
-       printf("Group ID: %d, Group Name: %s\n", getgid(), grp->gr_name);
-    }
+    gid_t gid = getgid();
+    struct group *grp = getgrgid(gid);
+    printf("Group ID: %d, Group Name: %s\n", gid, grp ? grp->gr_name : "?");
 
-    long ngroups_max = sysconf(_SC_NGROUPS_MAX);
+    int ngroups_max = getgroups(0, NULL);
     gid_t *groups = (gid_t *)calloc(ngroups_max, sizeof(gid_t));
     int ngroups = getgroups(ngroups_max, groups);
     if (ngroups == -1)
@@ -60,16 +30,12 @@ int main(void)
         perror("Error in getting groups");
         return 3;
     }
-    printf("Groups: ");
-    struct group *supgrp = getgrgid(pswd->pw_gid);
-    int i = 0;
-    for (i = 0; i < ngroups - 1; i++)
+    printf("Groups: \n");
+    for (int i = 0; i < ngroups; i++)
     {
-        printf("%d ", groups[i]);
-        supgrp = getgrgid(groups[i]);
-        printf("(%s); ", supgrp->gr_name);
+        struct group *supgrp = getgrgid(groups[i]);
+        printf("%d (%s)\n", groups[i], supgrp ? supgrp->gr_name : "?");
     }
-    printf("\n");
     free(groups);
     return 0;
 }
